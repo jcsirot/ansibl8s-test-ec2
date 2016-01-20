@@ -1,0 +1,11 @@
+aws:
+  key_name: ansibl8s
+  access_key: "{{ aws_access_key }}"
+  secret_key: "{{ aws_secret_key }}"
+  region: eu-central-1
+  group_id: sg-cb0327a2
+  instance_type: t2.micro
+  ami_id: ami-02724d1f # Debian
+  count: 1
+  tags:
+    name: demo
