@@ -16,3 +16,5 @@
         count: "{{ aws.count }}"
         instance_tags: "{{ aws.tags }}"
       register: ec2
+
+    - include: tests/playbook.yml
