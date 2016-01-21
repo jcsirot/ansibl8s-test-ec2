@@ -1,5 +1,5 @@
 aws:
-  key_name: ansibl8s
+  key_name: "{{ key_name | default('ansibl8s') }}"
   access_key: "{{ aws_access_key }}"
   secret_key: "{{ aws_secret_key }}"
   region: "{{ region|default('eu-central-1') }}"

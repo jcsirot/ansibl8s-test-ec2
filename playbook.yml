@@ -1,20 +1,50 @@
 ---
 - hosts: localhost
+  sudo: false
   gather_facts: False
 
   tasks:
-    - name: Provision a set of instances
-      ec2:
-        key_name: "{{ aws.key_name }}"
-        aws_access_key: "{{ aws.access_key }}"
-        aws_secret_key: "{{ aws.secret_key }}"
-        region: "{{ aws.region }}"
-        group_id: "{{ aws.group_id}}"
-        instance_type: "{{ aws.instance_type}}"
-        image: "{{ aws.ami_id }}"
-        wait: true
-        count: "{{ aws.count }}"
-        instance_tags: "{{ aws.tags }}"
-      register: ec2
+  - name: Provision a set of instances
+    ec2:
+      key_name: "{{ aws.key_name }}"
+      aws_access_key: "{{ aws.access_key }}"
+      aws_secret_key: "{{ aws.secret_key }}"
+      region: "{{ aws.region }}"
+      group_id: "{{ aws.group_id}}"
+      instance_type: "{{ aws.instance_type}}"
+      image: "{{ aws.ami_id }}"
+      wait: true
+      count: "{{ aws.count }}"
+      instance_tags: "{{ aws.tags }}"
+    register: ec2
 
-    - include: tests/playbook.yml
+  - name: Add new instance to host group kube-master
+    add_host: hostname={{ item.public_ip }} groupname=kube-master
+    with_items: ec2.instances[0:2]
+
+  - name: Add new instance to host group kube-node
+    add_host: hostname={{ item.public_ip }} groupname=kube-node
+    with_items: ec2.instances
+
+  - name: Add new instance to host group etcd
+    add_host: hostname={{ item.public_ip }} groupname=etcd
+    with_items: ec2.instances[0:2]
+
+  - name: Add new instance to host group k8s-cluster
+    add_host: hostname={{ item.public_ip }} groupname=k8s-cluster
+    with_items: ec2.instances
+
+  - debug:
+      var: ec2
+
+  - name: Wait until SSH is available
+    local_action:
+      module: wait_for
+      host: "{{ item.public_ip }}"
+      port: 22
+      delay: 60
+      timeout: 320
+      state: started
+    with_items: ec2.instances
+
+- include: setup-kubernetes/cluster.yml
